@@ -4,20 +4,34 @@ echo "Installing OpenJDK..."
 #  | tar -xz \
 # && sudo mv jdk-11.jdk /Library/Java/JavaVirtualMachines
 
-curl https://download.java.net/java/ga/jdk11/openjdk-11_osx-x64_bin.tar.gz 
-# \ |  \
-#  && 
-tar -xz
-mv jdk-11.jdk java
-# ตรวจสอบว่าการดาวน์โหลดสำเร็จ
-if [ ! -f openjdk.tar.gz ]; then
-  echo "Failed to download OpenJDK!"
-  exit 1
-fi
+# curl https://download.java.net/java/ga/jdk11/openjdk-11_osx-x64_bin.tar.gz 
+# \ | tar -xz \
+#  && mv jdk-11.jdk java
+
+# Update package repository
+echo "Updating package repository..."
+sudo apt update
+
+# Install OpenJDK
+echo "Installing OpenJDK-17..."
+sudo apt install -y openjdk-17-jdk
+
+# Verify installation
+echo "Checking Java installation..."
+java -version
+javac -version
+
+echo "Java installation completed."
+
+# # ตรวจสอบว่าการดาวน์โหลดสำเร็จ
+# if [ ! -f openjdk.tar.gz ]; then
+#   echo "Failed to download OpenJDK!"
+#   exit 1
+# fi
 
 # Extract
-mkdir -p jdk
-tar -xzf openjdk.tar.gz -C jdk --strip-components=1
+# mkdir -p jdk
+# tar -xzf openjdk.tar.gz -C jdk --strip-components=1
 export JAVA_HOME=$PWD/jdk
 export PATH=$JAVA_HOME/bin:$PATH
 
