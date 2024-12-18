@@ -4,10 +4,13 @@ curl -sL https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jd
 mkdir -p jdk
 tar -xzf openjdk.tar.gz -C jdk --strip-components=1
 export JAVA_HOME=$PWD/jdk
-export PATH=$JAVA_HOME/bin:$PATH
+export PATH=/path/to/jdk/bin:$PATH
 
 echo "Java version:"
+echo $JAVA_HOME
+echo $PATH
 java -version
+javac -version
 
 echo "Running yarn build..."
 yarn
