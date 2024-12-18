@@ -1,16 +1,25 @@
 #!/bin/bash
 echo "Installing OpenJDK..."
-curl -sL https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.20+8/OpenJDK11U-jdk_x64_linux_hotspot_11.0.20_8.tar.gz -o openjdk.tar.gz
+curl -L -o openjdk.tar.gz https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11_linux-x64_bin.tar.gz
+
+# ตรวจสอบว่าการดาวน์โหลดสำเร็จ
+if [ ! -f openjdk.tar.gz ]; then
+  echo "Failed to download OpenJDK!"
+  exit 1
+fi
+
+# Extract
 mkdir -p jdk
 tar -xzf openjdk.tar.gz -C jdk --strip-components=1
 export JAVA_HOME=$PWD/jdk
-export PATH=/path/to/jdk/bin:$PATH
+export PATH=$JAVA_HOME/bin:$PATH
 
+# ตรวจสอบว่า Java ติดตั้งสำเร็จ
 echo "Java version:"
-echo $JAVA_HOME
-echo $PATH
-java -version
-javac -version
+java -version || {
+  echo "Java not found. Exiting."
+  exit 1
+}
 
 echo "Running yarn build..."
 yarn
