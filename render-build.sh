@@ -8,13 +8,17 @@ echo "Installing OpenJDK..."
 # \ | tar -xz \
 #  && mv jdk-11.jdk java
 
-# Update package repository
-echo "Updating package repository..."
-apt update || true
+# # Update package repository
+# echo "Updating package repository..."
+# apt update || true
 
-# Install OpenJDK
-echo "Installing OpenJDK-17..."
-apt install -y openjdk-17-jdk || true
+# # Install OpenJDK
+# echo "Installing OpenJDK-17..."
+# apt install -y openjdk-17-jdk || true
+
+echo "Downloading and setting up OpenJDK..."
+curl -L -o openjdk.tar.gz https://download.java.net/java/ga/jdk17/openjdk-17_linux-x64_bin.tar.gz
+tar -xzf openjdk.tar.gz
 
 # Verify installation
 echo "Checking Java installation..."
