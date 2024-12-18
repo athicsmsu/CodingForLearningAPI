@@ -10,11 +10,11 @@ echo "Installing OpenJDK..."
 
 # Update package repository
 echo "Updating package repository..."
-sudo apt update
+apt update || true
 
 # Install OpenJDK
 echo "Installing OpenJDK-17..."
-sudo apt install -y openjdk-17-jdk
+apt install -y openjdk-17-jdk || true
 
 # Verify installation
 echo "Checking Java installation..."
