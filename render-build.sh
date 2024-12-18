@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Installing OpenJDK..."
-curl -L -o openjdk.tar.gz https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11_linux-x64_bin.tar.gz
+curl https://download.java.net/java/ga/jdk11/openjdk-11_osx-x64_bin.tar.gz
 
 # ตรวจสอบว่าการดาวน์โหลดสำเร็จ
 if [ ! -f openjdk.tar.gz ]; then
