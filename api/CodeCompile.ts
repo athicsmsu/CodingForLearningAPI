@@ -27,6 +27,14 @@ router.post("/compile", (req, res) => {
   const className = path.basename(tempFileName, ".java");
   fs.writeFileSync(tempFileName, code);
 
+  exec(`java --version`, (error, stdout, stderr) => {
+    if (error) {
+      res.status(510).send(stderr);
+    } else {
+      res.send(stdout);
+    }
+  });
+
   // คอมไพล์โค้ดโดยใช้ javac
   exec(
     `javac ${tempFileName}`,
@@ -64,8 +72,20 @@ router.post("/compile-python", (req, res) => {
   const tempFileName = "TempCode.py";
   fs.writeFileSync(tempFileName, code);
 
+  exec(`python --version`, (error, stdout, stderr) => {
+    if (error) {
+       console.log("Python not found, trying python3");
+       exec("python3 --version", (error, stdout, stderr) => {
+         // Handle error if python3 also not found
+       });
+      res.status(510).send(stderr);
+    } else {
+      res.send(stdout);
+    }
+  })
+
   // รันโค้ด Python โดยใช้ python3
-  exec(`python3 ${tempFileName}`, (error, stdout, stderr) => {
+  exec(`python ${tempFileName}`, (error, stdout, stderr) => {
     if (error) {
       res.status(510).send(stderr);
     } else {
