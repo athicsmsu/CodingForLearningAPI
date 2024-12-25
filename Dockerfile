@@ -4,7 +4,7 @@ FROM node:20
 
 # ติดตั้ง OpenJDK (Java Development Kit) และ Python
 RUN apt-get update && apt-get install -y \
-    openjdk-11-jdk \
+    openjdk-17-jdk \
     python3 \
     python3-pip \
     && apt-get clean \
