@@ -1,5 +1,6 @@
 # ใช้ Node.js base image
-FROM node:20.10.0
+FROM node:20
+
 
 # ติดตั้ง OpenJDK (Java Development Kit) และ Python
 RUN apt-get update && apt-get install -y \
@@ -32,4 +33,4 @@ COPY . .
 EXPOSE 3000
 
 # คำสั่งสำหรับรันเซิร์ฟเวอร์
-CMD ["npm", "start"]
+CMD ["npx","ts-node","server.ts"]
