@@ -29,9 +29,7 @@ router.post("/compile", (req, res) => {
 
   exec(`java --version`, (error, stdout, stderr) => {
     if (error) {
-      res.status(510).send(stderr);
-    } else {
-      res.send(stdout);
+      console.log("java not found");
     }
   });
 
@@ -78,9 +76,6 @@ router.post("/compile-python", (req, res) => {
        exec("python3 --version", (error, stdout, stderr) => {
          // Handle error if python3 also not found
        });
-      res.status(510).send(stderr);
-    } else {
-      res.send(stdout);
     }
   })
 
