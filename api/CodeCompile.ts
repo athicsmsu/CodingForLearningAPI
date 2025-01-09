@@ -12,7 +12,7 @@ interface CodeRequest {
   code: string;
 }
 
-router.post("/compile", (req, res) => {
+router.post("/compile-java", (req, res) => {
   const body: CodeRequest = req.body;
 
   if (!body.code) {
