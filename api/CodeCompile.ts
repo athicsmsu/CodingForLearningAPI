@@ -43,7 +43,7 @@ router.post("/compile-java", (req, res) => {
         // รันโค้ดโดยใช้ java
         exec(`java ${className}`, (runError, runStdout, runStderr) => {
           if (runError) {
-            res.status(510).send(runStderr);
+            res.send(runError);
           } else {
             res.send(runStdout);
           }
@@ -74,15 +74,17 @@ router.post("/compile-python", (req, res) => {
     if (error) {
        console.log("Python not found, trying python3");
        exec("python3 --version", (error, stdout, stderr) => {
-         // Handle error if python3 also not found
+         if (error) {
+          console.log("Python3 not found");
+         }
        });
     }
   })
 
-  // รันโค้ด Python โดยใช้ python3
+  // รันโค้ด Python
   exec(`python ${tempFileName}`, (error, stdout, stderr) => {
     if (error) {
-      res.status(510).send(stderr);
+      res.send(error);
     } else {
       res.send(stdout);
     }
