@@ -23,7 +23,7 @@ router.post("/compile-java", (req, res) => {
   const code: string = body.code;
 
   // เขียนโค้ดลงในไฟล์ชั่วคราว
-  const tempFileName = "TempCode.java";
+  const tempFileName = "Main.java";
   const className = path.basename(tempFileName, ".java");
   fs.writeFileSync(tempFileName, code);
 
@@ -67,7 +67,7 @@ router.post("/compile-python", (req, res) => {
   const code: string = body.code;
 
   // เขียนโค้ด Python ลงในไฟล์ชั่วคราว
-  const tempFileName = "TempCode.py";
+  const tempFileName = "Main.py";
   fs.writeFileSync(tempFileName, code);
 
   exec(`python --version`, (error, stdout, stderr) => {
