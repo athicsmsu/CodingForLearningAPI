@@ -2,8 +2,6 @@ import express from "express";
 import nodemailer from "nodemailer";
 export const router = express.Router();
 
-const otpStore = new Map<string, string>(); // key = email, value = otp
-
 // ใช้ Gmail SMTP หรือของคุณเอง
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -13,18 +11,36 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// เปลี่ยน otpStore ให้เก็บ OTP, timeout และ expiresAt
+const otpStore = new Map<
+  string,
+  { otp: string; timeout: NodeJS.Timeout; expiresAt: number }
+>();
+
 // POST /api/send-otp
 router.post("/send-otp", async (req, res) => {
   const { email } = req.body;
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresInMs = 5 * 60 * 1000; // 5 นาที
+  const expiresAt = Date.now() + expiresInMs;
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 หลัก
-  otpStore.set(email, otp); // เก็บ OTP ชั่วคราว
+  // ถ้ามี OTP เดิมอยู่แล้ว ให้เคลียร์ timeout ก่อน
+  if (otpStore.has(email)) {
+    clearTimeout(otpStore.get(email)!.timeout);
+  }
+
+  const timeout = setTimeout(() => {
+    otpStore.delete(email);
+    console.log(`OTP for ${email} expired.`);
+  }, expiresInMs);
+
+  otpStore.set(email, { otp, timeout, expiresAt });
 
   const mailOptions = {
-    from: "Codeing For Learnig",
+    from: "your_email@gmail.com",
     to: email,
     subject: "Your OTP Code",
-    text: `Your OTP code is: ${otp}`,
+    text: `Your OTP code is: ${otp} (valid for 5 minutes)`,
   };
 
   try {
@@ -38,12 +54,23 @@ router.post("/send-otp", async (req, res) => {
 // POST /api/verify-otp
 router.post("/verify-otp", (req, res) => {
   const { email, otp } = req.body;
-  const validOtp = otpStore.get(email);
+  const record = otpStore.get(email);
 
-  if (otp === validOtp) {
-    otpStore.delete(email); // ล้าง OTP เมื่อใช้สำเร็จ
-    res.status(200).json({ message: "OTP verified successfully" });
-  } else {
-    res.status(400).json({ message: "Invalid OTP" });
+  if (!record) {
+    return res.status(400).json({ message: "No OTP sent or already expired" });
   }
+
+  if (Date.now() > record.expiresAt) {
+    clearTimeout(record.timeout);
+    otpStore.delete(email);
+    return res.status(400).json({ message: "OTP has expired" });
+  }
+
+  if (otp !== record.otp) {
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
+  clearTimeout(record.timeout);
+  otpStore.delete(email);
+  res.status(200).json({ message: "OTP verified successfully" });
 });
