@@ -2,6 +2,7 @@ import express from "express";
 
 import { router as index } from "./api/index";
 import { router as user } from "./api/user";
+import { router as otp } from "./api/otp";
 import { router as code } from "./api/CodeCompile";
 
 
@@ -22,3 +23,4 @@ app.use(bodyParser.json());
 app.use("/", index);
 app.use("/user", user);
 app.use("/code", code);
+app.use("/otp", otp);
