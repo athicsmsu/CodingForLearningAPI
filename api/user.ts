@@ -1,71 +1,65 @@
 import express from "express";
 import { conn } from "../dbconnect";
-import sqlite3 from "sqlite3";
+import mysql from "mysql";
 
 export const router = express.Router();
 
-// เปิดการเชื่อมต่อฐานข้อมูล SQLite
-const db = new sqlite3.Database("./codingforlearning.db", (err) => {
-  if (err) {
-    console.error(err.message);
-  }
-  console.log("Connected to the SQLite database.");
-});
-
-// สร้าง API สำหรับการ login
+// POST /api/login
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const sql = "SELECT * FROM Users WHERE email = ? AND password = ?";
 
-  db.get(sql, [email, password], (err, row) => {
+  let sql = "SELECT * FROM User WHERE email = ? AND password = ?";
+  sql = mysql.format(sql, [email, password]);
+
+  conn.query(sql, (err, result) => {
     if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (row) {
-      return res.json({ message: "Login Successful", user: row });
+      res.status(500).json({ error: "Database error", detail: err });
+    } else if (result.length === 0) {
+      res.status(401).json({ message: "Invalid email or password" });
     } else {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-  });
-});
-
-// สร้าง API สำหรับการ register
-router.post("/register", (req, res) => {
-  const { name, email, password, image } = req.body;
-
-  // ตรวจสอบว่าผู้ใช้งานนี้มีอยู่ในระบบแล้วหรือไม่
-  const checkUserSql = "SELECT * FROM Users WHERE email = ?";
-  db.get(checkUserSql, [email], (err, row) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    if (row) {
-      return res.status(400).json({ message: "User already exists" });
-    } else {
-      // เพิ่มผู้ใช้ใหม่ในฐานข้อมูล
-      const insertUserSql =
-        "INSERT INTO Users (name, email, password, image) VALUES (?, ?, ?, ?)";
-      db.run(insertUserSql, [name, email, password, image], function (err) {
-        if (err) {
-          return res.status(500).json({ error: err.message });
-        }
-        return res.json({
-          message: "User registered successfully",
-          userId: this.lastID,
-        });
+      const user = result[0];
+      res.status(200).json({
+        message: "Login successful",
+        user: {
+          uid: user.uid,
+          name: user.name,
+          email: user.email,
+          status: user.status,
+        },
       });
     }
   });
 });
 
-// สร้าง API สำหรับการดึงข้อมูลผู้ใช้ทั้งหมด
-router.get("/users", (req, res) => {
-  const sql = "SELECT * FROM Users";
+// POST /api/register
+router.post("/register", (req, res) => {
+  const { name, email, password } = req.body;
 
-  db.all(sql, [], (err, rows) => {
+  // ตรวจสอบว่ามีอีเมลนี้ในระบบหรือยัง
+  let checkSql = "SELECT * FROM User WHERE email = ?";
+  checkSql = mysql.format(checkSql, [email]);
+
+  conn.query(checkSql, (err, result) => {
     if (err) {
-      return res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Database error", detail: err });
+    } else if (result.length > 0) {
+      res.status(409).json({ message: "Email already registered" });
+    } else {
+      // ถ้ายังไม่มี ให้สมัคร
+      let insertSql = "INSERT INTO User (name, email, password, status) VALUES (?, ?, ?, ?)";
+      insertSql = mysql.format(insertSql, [name, email, password, true]);
+
+      conn.query(insertSql, (err, result) => {
+        if (err) {
+          res.status(500).json({ error: "Insert failed", detail: err });
+        } else {
+          res.status(201).json({
+            message: "Registration successful",
+            userId: result.insertId,
+          });
+        }
+      });
     }
-    return res.json({ users: rows });
   });
 });
+
