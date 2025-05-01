@@ -103,3 +103,21 @@ router.post("/change-password", (req, res) => {
     }
   });
 });
+
+// POST /api/reset-password
+router.post("/reset-password", (req, res) => {
+  const { email, newPassword } = req.body;
+
+  const updateSql = "UPDATE User SET password = ? WHERE email = ?";
+  const formattedSql = mysql.format(updateSql, [newPassword, email]);
+
+  conn.query(formattedSql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: "Failed to update password", detail: err });
+    } else if (result.affectedRows === 0) {
+      res.status(404).json({ message: "User not found" });
+    } else {
+      res.status(200).json({ message: "Password changed successfully" });
+    }
+  });
+});
