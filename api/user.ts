@@ -121,3 +121,57 @@ router.post("/reset-password", (req, res) => {
     }
   });
 });
+
+// POST /api/edit
+router.post("/edit", (req, res) => {
+  const { email, name, newEmail, password, confirmPassword } = req.body;
+
+  // ดึงข้อมูลเดิมจากฐานข้อมูล
+  let getUserSql = "SELECT * FROM User WHERE email = ?";
+  getUserSql = mysql.format(getUserSql, [email]);
+
+  conn.query(getUserSql, (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error", detail: err });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = result[0];
+
+    // ใช้ค่าจาก body ถ้ามี หรือใช้ค่าจากฐานข้อมูล
+    const updatedName = name || user.name;
+    const updatedEmail = newEmail || user.email;
+    const updatedPassword = password || user.password;
+
+    // ถ้ามีการเปลี่ยน password ต้องมี confirmPassword และต้องตรงกัน
+    if (password && password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    // ตรวจสอบว่าอีเมลใหม่ซ้ำกับของผู้ใช้อื่นไหม (ยกเว้นตัวเอง)
+    let checkEmailSql = "SELECT * FROM User WHERE email = ? AND email != ?";
+    checkEmailSql = mysql.format(checkEmailSql, [updatedEmail, user.email]);
+
+    conn.query(checkEmailSql, (err, emailResult) => {
+      if (err) {
+        return res.status(500).json({ error: "Database error", detail: err });
+      }
+      if (emailResult.length > 0) {
+        return res.status(409).json({ message: "Email already in use by another account" });
+      }
+
+      // อัปเดตข้อมูลผู้ใช้
+      let updateSql = "UPDATE User SET name = ?, email = ?, password = ? WHERE email = ?";
+      updateSql = mysql.format(updateSql, [updatedName, updatedEmail, updatedPassword, email]);
+
+      conn.query(updateSql, (err, updateResult) => {
+        if (err) {
+          return res.status(500).json({ error: "Update failed", detail: err });
+        }
+        res.status(200).json({ message: "User updated successfully" });
+      });
+    });
+  });
+});
