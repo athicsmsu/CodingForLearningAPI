@@ -124,11 +124,11 @@ router.post("/reset-password", (req, res) => {
 
 // POST /api/edit
 router.post("/edit", (req, res) => {
-  const { email, name, newEmail, password, confirmPassword } = req.body;
+  const { uid, name, email, password, confirmPassword } = req.body;
 
   // ดึงข้อมูลเดิมจากฐานข้อมูล
-  let getUserSql = "SELECT * FROM User WHERE email = ?";
-  getUserSql = mysql.format(getUserSql, [email]);
+  let getUserSql = "SELECT * FROM User WHERE uid = ?";
+  getUserSql = mysql.format(getUserSql, [uid]);
 
   conn.query(getUserSql, (err, result) => {
     if (err) {
@@ -142,7 +142,7 @@ router.post("/edit", (req, res) => {
 
     // ใช้ค่าจาก body ถ้ามี หรือใช้ค่าจากฐานข้อมูล
     const updatedName = name || user.name;
-    const updatedEmail = newEmail || user.email;
+    const updatedEmail = email || user.email;
     const updatedPassword = password || user.password;
 
     // ถ้ามีการเปลี่ยน password ต้องมี confirmPassword และต้องตรงกัน
@@ -151,8 +151,8 @@ router.post("/edit", (req, res) => {
     }
 
     // ตรวจสอบว่าอีเมลใหม่ซ้ำกับของผู้ใช้อื่นไหม (ยกเว้นตัวเอง)
-    let checkEmailSql = "SELECT * FROM User WHERE email = ? AND email != ?";
-    checkEmailSql = mysql.format(checkEmailSql, [updatedEmail, user.email]);
+    let checkEmailSql = "SELECT * FROM User WHERE email = ? AND uid != ?";
+    checkEmailSql = mysql.format(checkEmailSql, [updatedEmail, user.uid]);
 
     conn.query(checkEmailSql, (err, emailResult) => {
       if (err) {
@@ -163,8 +163,8 @@ router.post("/edit", (req, res) => {
       }
 
       // อัปเดตข้อมูลผู้ใช้
-      let updateSql = "UPDATE User SET name = ?, email = ?, password = ? WHERE email = ?";
-      updateSql = mysql.format(updateSql, [updatedName, updatedEmail, updatedPassword, email]);
+      let updateSql = "UPDATE User SET name = ?, email = ?, password = ? WHERE uid = ?";
+      updateSql = mysql.format(updateSql, [updatedName, updatedEmail, updatedPassword, uid]);
 
       conn.query(updateSql, (err, updateResult) => {
         if (err) {
@@ -175,3 +175,17 @@ router.post("/edit", (req, res) => {
     });
   });
 });
+
+// GET /user/:uid
+router.get("/:uid", (req, res) => {
+  const uid = req.params.uid;
+
+  const sql = "SELECT * FROM User WHERE uid = ?";
+  conn.query(sql, [uid], (err, result) => {
+    if (err) return res.status(500).json({ error: "DB error", detail: err });
+    if (result.length === 0) return res.status(404).json({ message: "User not found" });
+
+    res.json(result[0]);
+  });
+});
+
