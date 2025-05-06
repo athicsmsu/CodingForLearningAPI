@@ -82,8 +82,7 @@ router.get("/latest-level/:uid/:language", (req, res) => {
 
     // ✅ เจอ → ส่ง level จริงกลับ
     res.status(200).json({
-      latestLevel: result[0].level,
+      latestLevel: result[0].level + 1,
     });
   });
 });
-
