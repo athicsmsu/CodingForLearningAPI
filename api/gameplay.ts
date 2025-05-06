@@ -75,14 +75,20 @@ router.get("/latest-level/:uid/:language", (req, res) => {
       return res.status(500).json({ error: "Database error", detail: err });
     }
 
-    // ❌ ไม่เจอข้อมูล → ส่ง level = 1 กลับ
+    // ❌ ถ้าไม่พบข้อมูล
     if (result.length === 0) {
       return res.status(200).json({ latestLevel: 1 });
     }
 
-    // ✅ เจอ → ส่ง level จริงกลับ
+    // ✅ ถ้าเจอข้อมูล → ตรวจสอบให้แน่ใจว่า `level` เป็นตัวเลข
+    const level = parseInt(result[0].level, 10); // แปลงเป็นตัวเลข
+    if (isNaN(level)) {
+      return res.status(400).json({ error: "Invalid level data" });
+    }
+
     res.status(200).json({
-      latestLevel: result[0].level + 1,
+      latestLevel: level + 1, // บวก 1 หลังจากแปลงเป็นตัวเลข
     });
   });
+
 });
