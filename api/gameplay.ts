@@ -52,32 +52,30 @@ router.post("/add-gameplay", (req, res) => {
     }
   );
 });
-
-// ✅ ดึง level ล่าสุดของผู้ใช้จาก GamePlay
-router.get("/latest-level/:uid", (req, res) => {
+// ✅ ดึง level ล่าสุดของผู้ใช้จาก GamePlay ตาม uid และ language
+router.get("/latest-level/:uid/:language", (req, res) => {
   const uid = req.params.uid;
+  const language = req.params.language;
 
-  if (!uid) {
-    return res.status(400).json({ error: "Missing uid parameter" });
+  if (!uid || !language) {
+    return res.status(400).json({ error: "Missing uid or language parameter" });
   }
 
   const sql = `
     SELECT level
     FROM GamePlay
-    WHERE uid = ?
+    WHERE uid = ? AND language = ?
     ORDER BY pid DESC
     LIMIT 1
   `;
 
-  conn.query(sql, [uid], (err, result) => {
+  conn.query(sql, [uid, language], (err, result) => {
     if (err) {
       return res.status(500).json({ error: "Database error", detail: err });
     }
 
     if (result.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No gameplay found for this uid" });
+      return res.status(404).json({ message: "No gameplay found for this uid and language" });
     }
 
     res.status(200).json({
@@ -85,4 +83,3 @@ router.get("/latest-level/:uid", (req, res) => {
     });
   });
 });
-
