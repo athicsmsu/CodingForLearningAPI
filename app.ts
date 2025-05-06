@@ -4,6 +4,7 @@ import { router as index } from "./api/index";
 import { router as user } from "./api/user";
 import { router as otp } from "./api/otp";
 import { router as code } from "./api/CodeCompile";
+import { router as gameplay } from "./api/gameplay";
 
 
 import bodyParser from "body-parser";
@@ -24,3 +25,4 @@ app.use("/", index);
 app.use("/user", user);
 app.use("/code", code);
 app.use("/otp", otp);
+app.use("/gameplay", gameplay);
