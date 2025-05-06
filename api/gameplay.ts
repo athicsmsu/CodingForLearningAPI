@@ -75,13 +75,15 @@ router.get("/latest-level/:uid/:language", (req, res) => {
       return res.status(500).json({ error: "Database error", detail: err });
     }
 
-    // ส่ง default level = 1 ถ้าไม่พบข้อมูล
+    // ❌ ไม่เจอข้อมูล → ส่ง level = 1 กลับ
     if (result.length === 0) {
       return res.status(200).json({ latestLevel: 1 });
     }
 
+    // ✅ เจอ → ส่ง level จริงกลับ
     res.status(200).json({
       latestLevel: result[0].level,
     });
   });
 });
+
