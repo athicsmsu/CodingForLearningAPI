@@ -52,3 +52,37 @@ router.post("/add-gameplay", (req, res) => {
     }
   );
 });
+
+// ✅ ดึง level ล่าสุดของผู้ใช้จาก GamePlay
+router.get("/latest-level/:uid", (req, res) => {
+  const uid = req.params.uid;
+
+  if (!uid) {
+    return res.status(400).json({ error: "Missing uid parameter" });
+  }
+
+  const sql = `
+    SELECT level
+    FROM GamePlay
+    WHERE uid = ?
+    ORDER BY pid DESC
+    LIMIT 1
+  `;
+
+  conn.query(sql, [uid], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error", detail: err });
+    }
+
+    if (result.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No gameplay found for this uid" });
+    }
+
+    res.status(200).json({
+      latestLevel: result[0].level,
+    });
+  });
+});
+
