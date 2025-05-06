@@ -52,7 +52,8 @@ router.post("/add-gameplay", (req, res) => {
     }
   );
 });
-// ✅ ดึง level ล่าสุดของผู้ใช้จาก GamePlay ตาม uid และ language
+
+// ✅ ดึง level ล่าสุดของผู้ใช้จาก GamePlay ตาม uid และ language (ถ้าไม่เจอส่ง 1)
 router.get("/latest-level/:uid/:language", (req, res) => {
   const uid = req.params.uid;
   const language = req.params.language;
@@ -74,12 +75,15 @@ router.get("/latest-level/:uid/:language", (req, res) => {
       return res.status(500).json({ error: "Database error", detail: err });
     }
 
+    // ❌ ไม่เจอข้อมูล → ส่ง level = 1 กลับ
     if (result.length === 0) {
-      return res.status(404).json({ message: "No gameplay found for this uid and language" });
+      return res.status(200).json({ latestLevel: 1 });
     }
 
+    // ✅ เจอ → ส่ง level จริงกลับ
     res.status(200).json({
       latestLevel: result[0].level,
     });
   });
 });
+
