@@ -124,7 +124,7 @@ router.post("/reset-password", (req, res) => {
 
 // POST /api/edit
 router.post("/edit", (req, res) => {
-  const { uid, name, email, password, confirmPassword } = req.body;
+  const { uid, name, newEmail, password, confirmPassword } = req.body;
 
   // ดึงข้อมูลเดิมจากฐานข้อมูล
   let getUserSql = "SELECT * FROM User WHERE uid = ?";
@@ -142,7 +142,7 @@ router.post("/edit", (req, res) => {
 
     // ใช้ค่าจาก body ถ้ามี หรือใช้ค่าจากฐานข้อมูล
     const updatedName = name || user.name;
-    const updatedEmail = email || user.email;
+    const updatedEmail = newEmail || user.email;
     const updatedPassword = password || user.password;
 
     // ถ้ามีการเปลี่ยน password ต้องมี confirmPassword และต้องตรงกัน
