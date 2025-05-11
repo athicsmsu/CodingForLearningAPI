@@ -3,7 +3,6 @@ import { conn } from "../dbconnect";
 
 export const router = express.Router();
 
-// ✅ เพิ่ม GamePlay และ History พร้อมกัน
 router.post("/add-gameplay", (req, res) => {
   const { uid, language, level, mission, score } = req.body;
 
@@ -11,47 +10,117 @@ router.post("/add-gameplay", (req, res) => {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  const gameplaySql = `
-    INSERT INTO GamePlay (uid, language, level, mission, score)
-    VALUES (?, ?, ?, ?, ?)
+  // ใช้วันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
+  const now = new Date();
+  const dateNow = now.toISOString().slice(0, 10);
+
+  // ตรวจสอบว่ามี record นี้อยู่แล้วไหม
+  const checkSql = `
+    SELECT * FROM GamePlay
+    WHERE uid = ? AND language = ? AND level = ?
+    ORDER BY pid DESC
+    LIMIT 1
   `;
-  conn.query(
-    gameplaySql,
-    [uid, language, level, mission, score],
-    (err, gameplayResult) => {
-      if (err) {
-        return res
-          .status(500)
-          .json({ error: "Insert gameplay failed", detail: err });
-      }
 
-      const pid = gameplayResult.insertId;
-
-      // ใช้วันที่ปัจจุบันในรูปแบบ YYYY-MM-DD
-      const now = new Date();
-      const dateNow = now.toISOString().slice(0, 10);
-
-      const historySql = `
-        INSERT INTO History (pid, date)
-        VALUES (?, ?)
-      `;
-      conn.query(historySql, [pid, dateNow], (err2, historyResult) => {
-        if (err2) {
-          return res
-            .status(500)
-            .json({ error: "Insert history failed", detail: err2 });
-        }
-
-        res.status(200).json({
-          message: "Gameplay and History added successfully",
-          pid: pid,
-          historyId: historyResult.insertId,
-          date: dateNow,
-        });
-      });
+  conn.query(checkSql, [uid, language, level], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error", detail: err });
     }
-  );
+
+    if (result.length > 0) {
+      const existing = result[0];
+
+      if (score > existing.score) {
+        // อัปเดต score ใหม่ + วันที่ใน History
+        const updateSql = `
+          UPDATE GamePlay
+          SET score = ?, mission = ?
+          WHERE pid = ?
+        `;
+
+        conn.query(updateSql, [score, mission, existing.pid], (err2) => {
+          if (err2) {
+            return res
+              .status(500)
+              .json({ error: "Update gameplay failed", detail: err2 });
+          }
+
+          const updateHistorySql = `
+            UPDATE History
+            SET date = ?
+            WHERE pid = ?
+          `;
+
+          conn.query(updateHistorySql, [dateNow, existing.pid], (err3) => {
+            if (err3) {
+              return res
+                .status(500)
+                .json({ error: "Update history failed", detail: err3 });
+            }
+
+            res.status(200).json({
+              message: "Score updated successfully",
+              pid: existing.pid,
+              updated: true,
+              date: dateNow,
+            });
+          });
+        });
+      } else {
+        // ไม่อัปเดตเพราะคะแนนใหม่น้อยกว่า
+        res.status(200).json({
+          message: "Existing score is higher or equal, no update performed",
+          pid: existing.pid,
+          updated: false,
+        });
+      }
+    } else {
+      // ถ้ายังไม่มีข้อมูล → แทรกใหม่
+      const insertSql = `
+        INSERT INTO GamePlay (uid, language, level, mission, score)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+      conn.query(
+        insertSql,
+        [uid, language, level, mission, score],
+        (err4, gameplayResult) => {
+          if (err4) {
+            return res
+              .status(500)
+              .json({ error: "Insert gameplay failed", detail: err4 });
+          }
+
+          const pid = gameplayResult.insertId;
+
+          const insertHistorySql = `
+          INSERT INTO History (pid, date)
+          VALUES (?, ?)
+        `;
+          conn.query(
+            insertHistorySql,
+            [pid, dateNow],
+            (err5, historyResult) => {
+              if (err5) {
+                return res
+                  .status(500)
+                  .json({ error: "Insert history failed", detail: err5 });
+              }
+
+              res.status(200).json({
+                message: "Gameplay and History added successfully",
+                pid: pid,
+                historyId: historyResult.insertId,
+                date: dateNow,
+                inserted: true,
+              });
+            }
+          );
+        }
+      );
+    }
+  });
 });
+
 
 // ✅ ดึง level ล่าสุดของผู้ใช้จาก GamePlay ตาม uid และ language (ถ้าไม่เจอส่ง 1)
 router.get("/latest-level/:uid/:language", (req, res) => {
