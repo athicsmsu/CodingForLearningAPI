@@ -92,3 +92,29 @@ router.get("/latest-level/:uid/:language", (req, res) => {
   });
 
 });
+
+router.get("/latest-pid/:uid/:language", (req, res) => {
+  const { uid, language } = req.params;
+
+  const sql = `
+    SELECT * FROM GamePlay
+    WHERE uid = ? AND language = ?
+    ORDER BY pid DESC
+    LIMIT 1
+  `;
+
+  conn.query(sql, [uid, language], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error", detail: err });
+    }
+
+    if (result.length > 0) {
+      res.status(200).json({
+        latestPid: result[0].pid
+      });
+    } else {
+      res.status(200).json({ latestPid: 0 });
+    }
+  });
+});
+
