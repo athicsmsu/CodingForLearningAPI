@@ -42,6 +42,24 @@ router.post("/login", (req, res) => {
   });
 });
 
+// POST /api/logout
+router.post("/logout", (req, res) => {
+  const { uid } = req.body;
+
+  const updateSql = "UPDATE User SET status = 0 WHERE uid = ?";
+  const formattedSql = mysql.format(updateSql, [uid]);
+
+  conn.query(formattedSql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: "Failed to update status", detail: err });
+    } else if (result.affectedRows === 0) {
+      res.status(404).json({ message: "User not found" });
+    } else {
+      res.status(200).json({ message: "Logout successful" });
+    }
+  });
+});
+
 
 // POST /api/register
 router.post("/register", (req, res) => {
