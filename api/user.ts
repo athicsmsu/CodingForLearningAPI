@@ -54,8 +54,9 @@ router.post("/login", (req, res) => {
 router.post("/logout", (req, res) => {
   const { uid } = req.body;
 
-  const updateSql = "UPDATE User SET status = 0 WHERE uid = ?";
+  let updateSql = "UPDATE User SET status = 0 WHERE uid = ?";
   const formattedSql = mysql.format(updateSql, [uid]);
+  console.log("Logging out uid:", uid);
 
   conn.query(formattedSql, (err, result) => {
     if (err) {
