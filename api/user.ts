@@ -8,36 +8,63 @@ export const router = express.Router();
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
+  // ตรวจสอบ email และ password
   let sql = "SELECT * FROM User WHERE email = ? AND password = ?";
   sql = mysql.format(sql, [email, password]);
 
   conn.query(sql, (err, result) => {
     if (err) {
-      res.status(500).json({ error: "Database error", detail: err });
-    } else if (result.length === 0) {
-      res.status(401).json({ message: "Invalid email or password" });
-    } else {
-      const user = result[0];
+      return res.status(500).json({ error: "Database error", detail: err });
+    }
+    if (result.length === 0) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
 
-      // อัปเดต status เป็น true
-      let updateSql = "UPDATE User SET status = true WHERE uid = ?";
-      updateSql = mysql.format(updateSql, [user.uid]);
+    const user = result[0];
 
-      conn.query(updateSql, (updateErr) => {
-        if (updateErr) {
-          res.status(500).json({ error: "Failed to update status", detail: updateErr });
-        } else {
-          res.status(200).json({
-            message: "Login successful",
-            user: {
-              uid: user.uid,
-              name: user.name,
-              email: user.email,
-              status: true,
-            },
-          });
-        }
+    // เช็ค status ว่า login อยู่หรือยัง
+    if (user.status === 1) {
+      return res.status(403).json({ message: "User already logged in elsewhere" });
+    }
+
+    // อัปเดต status = 1 หลัง login
+    let updateSql = "UPDATE User SET status = 1 WHERE uid = ?";
+    updateSql = mysql.format(updateSql, [user.uid]);
+
+    conn.query(updateSql, (updateErr) => {
+      if (updateErr) {
+        return res.status(500).json({ error: "Failed to update status", detail: updateErr });
+      }
+
+      res.status(200).json({
+        message: "Login successful",
+        user: {
+          uid: user.uid,
+          name: user.name,
+          email: user.email,
+          status: true,
+        },
       });
+    });
+  });
+});
+
+
+// POST /api/logout
+router.post("/logout", (req, res) => {
+  const { uid } = req.body;
+
+  let updateSql = "UPDATE User SET status = 0 WHERE uid = ?";
+  const formattedSql = mysql.format(updateSql, [uid]);
+  console.log("Logging out uid:", uid);
+
+  conn.query(formattedSql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: "Failed to update status", detail: err });
+    } else if (result.affectedRows === 0) {
+      res.status(404).json({ message: "User not found" });
+    } else {
+      res.status(200).json({ message: "Logout successful" });
     }
   });
 });

@@ -7,7 +7,7 @@ const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: "65011212145@msu.ac.th", // ใส่อีเมลจริง
-    pass: "lltvcvttbrgrdbkv", // ใส่รหัสผ่านแอป (ไม่ใช่รหัส Gmail ปกติ)
+    pass: "evykgizwtctfgszw", // ใส่รหัสผ่านแอป (ไม่ใช่รหัส Gmail ปกติ)
   },
 });
 
