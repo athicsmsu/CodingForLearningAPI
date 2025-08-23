@@ -183,3 +183,24 @@ router.get("/latest-pid/:uid/:language", (req, res) => {
   });
 });
 
+router.get("/raw-scores/:uid", (req, res) => {
+  const { uid } = req.params;
+
+  const sql = `
+    SELECT language, level, SUM(score) AS totalScore
+    FROM GamePlay
+    WHERE uid = ?
+    GROUP BY language, level
+  `;
+
+  conn.query(sql, [uid], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error", detail: err });
+    }
+
+    res.status(200).json(results);
+  });
+});
+
+
+
