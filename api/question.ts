@@ -67,6 +67,19 @@ router.get("/questionnaire/total/:uid", (req, res) => {
   });
 });
 
+// GET /api/questionnaire/check/:uid
+router.get("/questionnaire/check/:uid", (req, res) => {
+  const uid = req.params.uid;
+
+  const sql = "SELECT COUNT(*) AS total FROM QuestionNaire WHERE uid = ?";
+  conn.query(sql, [uid], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: "DB error", detail: err });
+    }
+    const total = result[0].total;
+    res.json({ answered: total > 0 }); // true ถ้าตอบแล้ว
+  });
+});
 
 
 
