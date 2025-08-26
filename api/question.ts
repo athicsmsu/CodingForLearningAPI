@@ -67,19 +67,31 @@ router.get("/questionnaire/total/:uid", (req, res) => {
   });
 });
 
-// GET /api/questionnaire/check/:uid
-router.get("/questionnaire/check/:uid", (req, res) => {
-  const uid = req.params.uid;
+router.get("/questionnaire/check/:uid/:level", (req, res) => {
+  const { uid, level } = req.params;
 
-  const sql = "SELECT COUNT(*) AS total FROM QuestionNaire WHERE uid = ?";
-  conn.query(sql, [uid], (err, result) => {
+  const sql = `
+    SELECT COUNT(*) AS answered
+    FROM QuestionNaire qn
+    INNER JOIN Question q ON qn.qid = q.qid
+    WHERE qn.uid = ? AND q.level = ?;
+  `;
+
+  conn.query(sql, [uid, level], (err, result) => {
     if (err) {
-      return res.status(500).json({ error: "DB error", detail: err });
+      return res.status(500).json({ error: "Database error", detail: err });
     }
-    const total = result[0].total;
-    res.json({ answered: total > 0 }); // true ถ้าตอบแล้ว
+
+    const answeredCount = result[0].answered;
+    let required = 10; // ค่า default
+    if (level === "Easy") required = 10;
+    else if (level === "Normal") required = 10;
+    else if (level === "Hard") required = 10;
+
+    res.json({ answered: answeredCount >= required });
   });
 });
+
 
 
 
