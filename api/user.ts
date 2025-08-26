@@ -8,42 +8,55 @@ export const router = express.Router();
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  // ตรวจสอบ email และ password
   let sql = "SELECT * FROM User WHERE email = ? AND password = ?";
   sql = mysql.format(sql, [email, password]);
 
   conn.query(sql, (err, result) => {
     if (err) {
-      return res.status(500).json({ error: "Database error", detail: err });
+      return res.status(500).json({
+        status: "ServerError",
+        message: "Database error",
+        detail: err
+      });
     }
+
     if (result.length === 0) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        status: "InvalidCredentials",
+        message: "Email or password is incorrect"
+      });
     }
 
     const user = result[0];
 
-    // เช็ค status ว่า login อยู่หรือยัง
     if (user.status === 1) {
-      return res.status(403).json({ message: "User already logged in elsewhere" });
+      return res.status(403).json({
+        status: "AlreadyLoggedIn",
+        message: "User already logged in elsewhere"
+      });
     }
 
-    // อัปเดต status = 1 หลัง login
     let updateSql = "UPDATE User SET status = 1 WHERE uid = ?";
     updateSql = mysql.format(updateSql, [user.uid]);
 
     conn.query(updateSql, (updateErr) => {
       if (updateErr) {
-        return res.status(500).json({ error: "Failed to update status", detail: updateErr });
+        return res.status(500).json({
+          status: "ServerError",
+          message: "Failed to update status",
+          detail: updateErr
+        });
       }
 
       res.status(200).json({
+        status: "Success",
         message: "Login successful",
-        user: {
+        data: {
           uid: user.uid,
           name: user.name,
           email: user.email,
-          status: true,
-        },
+          status: true
+        }
       });
     });
   });
@@ -74,31 +87,41 @@ router.post("/logout", (req, res) => {
 router.post("/register", (req, res) => {
   const { name, email, password } = req.body;
 
-  // ตรวจสอบว่ามีอีเมลนี้ในระบบหรือยัง
   let checkSql = "SELECT * FROM User WHERE email = ?";
   checkSql = mysql.format(checkSql, [email]);
 
   conn.query(checkSql, (err, result) => {
-    if (err) {
-      res.status(500).json({ error: "Database error", detail: err });
-    } else if (result.length > 0) {
-      res.status(409).json({ message: "Email already registered" });
-    } else {
-      // ถ้ายังไม่มี ให้สมัคร
-      let insertSql = "INSERT INTO User (name, email, password, status) VALUES (?, ?, ?, ?)";
-      insertSql = mysql.format(insertSql, [name, email, password, false]);
+    if (err)
+      return res
+        .status(500)
+        .json({ status: "ServerError", message: "DB error", detail: err });
 
-      conn.query(insertSql, (err, result) => {
-        if (err) {
-          res.status(500).json({ error: "Insert failed", detail: err });
-        } else {
-          res.status(201).json({
-            message: "Registration successful",
-            userId: result.insertId,
-          });
-        }
-      });
+    if (result.length > 0) {
+      return res
+        .status(409)
+        .json({ status: "EmailExists", message: "Email already registered" });
     }
+
+    let insertSql =
+      "INSERT INTO User (name, email, password, status) VALUES (?, ?, ?, ?)";
+    insertSql = mysql.format(insertSql, [name, email, password, false]);
+
+    conn.query(insertSql, (err, result) => {
+      if (err)
+        return res
+          .status(500)
+          .json({
+            status: "ServerError",
+            message: "Insert failed",
+            detail: err,
+          });
+
+      res.status(201).json({
+        status: "Success",
+        message: "Registration successful",
+        data: { uid: result.insertId },
+      });
+    });
   });
 });
 
@@ -132,20 +155,30 @@ router.post("/change-password", (req, res) => {
 });
 
 // POST /api/reset-password
+// /reset-password
 router.post("/reset-password", (req, res) => {
   const { email, newPassword } = req.body;
-
   const updateSql = "UPDATE User SET password = ? WHERE email = ?";
   const formattedSql = mysql.format(updateSql, [newPassword, email]);
 
   conn.query(formattedSql, (err, result) => {
     if (err) {
-      res.status(500).json({ error: "Failed to update password", detail: err });
-    } else if (result.affectedRows === 0) {
-      res.status(404).json({ message: "User not found" });
-    } else {
-      res.status(200).json({ message: "Password changed successfully" });
+      return res.status(500).json({
+        status: "ServerError",
+        message: "Failed to update password",
+        detail: err
+      });
+    } 
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        status: "UserNotFound",
+        message: "User not found"
+      });
     }
+    return res.status(200).json({
+      status: "Success",
+      message: "Password changed successfully"
+    });
   });
 });
 
