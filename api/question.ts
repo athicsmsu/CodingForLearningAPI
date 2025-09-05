@@ -67,7 +67,45 @@ router.get("/questionnaire/total/:uid", (req, res) => {
   });
 });
 
+router.get("/questionnaire/check/:uid/:level", (req, res) => {
+  const { uid, level } = req.params;
+  let qidRange;
 
+  switch (level) {
+    case "JavaEasy":
+      qidRange = [1, 10];
+      break;
+    case "JavaNormal":
+      qidRange = [11, 20];
+      break;
+    case "JavaHard":
+      qidRange = [21, 30];
+      break;
+    case "PythonEasy":
+      qidRange = [31, 40];
+      break;
+    case "PythonNormal":
+      qidRange = [41, 50];
+      break;
+    case "PythonHard":
+      qidRange = [51, 60];
+      break;
+    default:
+      return res.status(400).json({ message: "Invalid level" });
+  }
 
+  const sql = `
+    SELECT COUNT(*) AS answered
+    FROM QuestionNaire
+    WHERE uid = ? AND qid BETWEEN ? AND ?
+  `;
 
+  conn.query(sql, [uid, qidRange[0], qidRange[1]], (err, result) => {
+    if (err)
+      return res.status(500).json({ message: "Database error", error: err });
 
+    const answeredCount = result[0].answered;
+    const required = qidRange[1] - qidRange[0] + 1; // จำนวนคำถามใน Level
+    res.json({ answered: answeredCount >= required });
+  });
+});
