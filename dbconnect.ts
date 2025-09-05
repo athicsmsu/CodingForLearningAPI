@@ -3,7 +3,7 @@ import util from "util";
 
 export const conn = mysql.createPool({
   connectionLimit: 10,
-  host: "phpmyadmin.alwaysdata.com",
+  host: "mysql-athijd.alwaysdata.net",
   user: "athijd",
   password: "Aa11bb22.",
   database: "athijd_historyplay",
