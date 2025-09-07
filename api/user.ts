@@ -186,55 +186,50 @@ router.post("/reset-password", (req, res) => {
 router.post("/edit", (req, res) => {
   const { uid, name, newEmail, password, confirmPassword } = req.body;
 
-  // ดึงข้อมูลเดิมจากฐานข้อมูล
   let getUserSql = "SELECT * FROM User WHERE uid = ?";
-  getUserSql = mysql.format(getUserSql, [uid]);
+  let formattedGetUserSql = mysql.format(getUserSql, [uid]);
 
-  conn.query(getUserSql, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: "Database error", detail: err });
-    }
-    if (result.length === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
+  conn.query(formattedGetUserSql, (err, result) => {
+    if (err) return res.status(500).json({ status: "ServerError", message: "Database error", detail: err });
+    if (result.length === 0) return res.status(404).json({ status: "UserNotFound", message: "User not found" });
 
     const user = result[0];
-
-    // ใช้ค่าจาก body ถ้ามี หรือใช้ค่าจากฐานข้อมูล
     const updatedName = name || user.name;
     const updatedEmail = newEmail || user.email;
     const updatedPassword = password || user.password;
 
-    // ถ้ามีการเปลี่ยน password ต้องมี confirmPassword และต้องตรงกัน
     if (password && password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
+      return res.status(400).json({ status: "PasswordMismatch", message: "Passwords do not match" });
     }
 
-    // ตรวจสอบว่าอีเมลใหม่ซ้ำกับของผู้ใช้อื่นไหม (ยกเว้นตัวเอง)
     let checkEmailSql = "SELECT * FROM User WHERE email = ? AND uid != ?";
-    checkEmailSql = mysql.format(checkEmailSql, [updatedEmail, user.uid]);
+    let formattedCheckEmailSql = mysql.format(checkEmailSql, [updatedEmail, user.uid]);
 
-    conn.query(checkEmailSql, (err, emailResult) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error", detail: err });
-      }
-      if (emailResult.length > 0) {
-        return res.status(409).json({ message: "Email already in use by another account" });
-      }
+    conn.query(formattedCheckEmailSql, (err, emailResult) => {
+      if (err) return res.status(500).json({ status: "ServerError", message: "Database error", detail: err });
+      if (emailResult.length > 0) return res.status(409).json({ status: "EmailExists", message: "Email already in use by another account" });
 
-      // อัปเดตข้อมูลผู้ใช้
       let updateSql = "UPDATE User SET name = ?, email = ?, password = ? WHERE uid = ?";
-      updateSql = mysql.format(updateSql, [updatedName, updatedEmail, updatedPassword, uid]);
+      let formattedUpdateSql = mysql.format(updateSql, [updatedName, updatedEmail, updatedPassword, uid]);
 
-      conn.query(updateSql, (err, updateResult) => {
-        if (err) {
-          return res.status(500).json({ error: "Update failed", detail: err });
-        }
-        res.status(200).json({ message: "User updated successfully" });
+      conn.query(formattedUpdateSql, (err) => {
+        if (err) return res.status(500).json({ status: "ServerError", message: "Update failed", detail: err });
+
+        res.status(200).json({
+          status: "Success",
+          message: "User updated successfully",
+          data: {
+            uid: user.uid,
+            name: updatedName,
+            email: updatedEmail,
+            status: user.status === 1
+          }
+        });
       });
     });
   });
 });
+
 
 // GET /user/:uid
 router.get("/:uid", (req, res) => {
