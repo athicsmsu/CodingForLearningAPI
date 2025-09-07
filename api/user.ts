@@ -230,6 +230,19 @@ router.post("/edit", (req, res) => {
   });
 });
 
+// POST /user/check-email
+router.post("/check-email", (req, res) => {
+  const { email, uid } = req.body;
+  let checkEmailSql = "SELECT * FROM User WHERE email = ? AND uid != ?";
+  let formattedCheckEmailSql = mysql.format(checkEmailSql, [email, uid]);
+
+  conn.query(formattedCheckEmailSql, (err, result) => {
+    if (err) return res.status(500).json({ status: "ServerError", message: err.message });
+    if (result.length > 0) return res.status(409).json({ status: "EmailExists", message: "Email already in use" });
+    res.status(200).json({ status: "Available", message: "Email available" });
+  });
+});
+
 
 // GET /user/:uid
 router.get("/:uid", (req, res) => {
