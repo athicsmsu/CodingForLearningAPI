@@ -30,7 +30,7 @@ router.post("/questionnaire/submit", (req, res) => {
   // ใช้ uid จาก root แทน ans.pid
   const values = answers.map(ans => [uid, ans.qid, ans.answer, ans.point]);
 
-  const sql = "INSERT INTO QuestionNaire (uid, qid, answer, point) VALUES ?";
+  const sql = "INSERT INTO Exam (uid, qid, answer, point) VALUES ?";
   conn.query(sql, [values], (err, result) => {
     if (err) {
       console.error("Insert Error:", err);
@@ -56,7 +56,7 @@ router.get("/questionnaire/total/:uid", (req, res) => {
       SUM(CASE WHEN qid BETWEEN 31 AND 40 THEN point ELSE 0 END) AS python_easy,
       SUM(CASE WHEN qid BETWEEN 41 AND 50 THEN point ELSE 0 END) AS python_normal,
       SUM(CASE WHEN qid BETWEEN 51 AND 60 THEN point ELSE 0 END) AS python_hard
-    FROM QuestionNaire
+    FROM Exam
     WHERE uid = ?
   `;
 
@@ -96,7 +96,7 @@ router.get("/questionnaire/check/:uid/:level", (req, res) => {
 
   const sql = `
     SELECT COUNT(*) AS answered
-    FROM QuestionNaire
+    FROM Exam
     WHERE uid = ? AND qid BETWEEN ? AND ?
   `;
 
