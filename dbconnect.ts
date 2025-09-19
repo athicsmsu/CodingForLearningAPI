@@ -1,11 +1,13 @@
+import "dotenv/config";
 import mysql from "mysql";
 import util from "util";
 
 export const conn = mysql.createPool({
   connectionLimit: 10,
-  host: "mysql-athijd.alwaysdata.net",
-  user: "athijd",
-  password: "Aa11bb22.",
-  database: "athijd_historyplay",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
 });
+
 export const queryAsync = util.promisify(conn.query).bind(conn);
