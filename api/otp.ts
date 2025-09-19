@@ -114,12 +114,24 @@ router.post("/send-otp", async (req, res) => {
 
   otpStore.set(email, { otp, timeout, expiresAt });
 
-  // เตรียมอีเมลที่จะส่ง
+  // HTML Email สวย ๆ
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; text-align: center; color: #333;">
+      <h2 style="color: #4CAF50;">Coding-For-Learning OTP</h2>
+      <p>Hello!</p>
+      <p>Your OTP code is:</p>
+      <div style="font-size: 36px; font-weight: bold; color: #FF5722; margin: 20px 0;">${otp}</div>
+      <p style="font-size: 14px; color: #555;">This code is valid for 5 minutes.</p>
+      <hr style="margin: 20px 0;">
+      <p style="font-size: 12px; color: #999;">If you did not request this, please ignore this email.</p>
+    </div>
+  `;
+
   const msg = {
     to: email,
     from: process.env.SENDGRID_FROM_EMAIL!, // ต้อง verify ใน SendGrid
-    subject: "Your OTP Code",
-    text: `Your OTP code is: ${otp} (valid for 5 minutes)`,
+    subject: "Your OTP Code - Coding-For-Learning",
+    html: htmlContent,
   };
 
   try {
@@ -130,6 +142,7 @@ router.post("/send-otp", async (req, res) => {
     res.status(500).json({ error: "Failed to send email", detail: error });
   }
 });
+
 
 // POST /api/verify-otp
 router.post("/verify-otp", (req, res) => {
